@@ -85,6 +85,6 @@ A production version would use:
 
 Any Aadhaar-linked feature would require explicit consent, tokenisation, encryption, minimal data storage, and legal/security review. Aadhaar must not be used as a public identifier or default login.
 
-## Disclaimer
 
-This is a hackathon prototype using synthetic data calibrated to the supplied research model. It does not connect to live PMBI, warehouse, POS, SMS, Aadhaar, or payment systems.
+
+
