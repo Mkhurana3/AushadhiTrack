@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AushadhiTrack — Medicine Integrity Network</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <style>.role-switch{display:flex;padding:3px;background:#f0f6f3;border-radius:8px;gap:2px}.role-switch button{border:0;background:transparent;color:#617573;border-radius:6px;padding:6px 10px;font:700 10px Manrope;cursor:pointer}.role-switch button.active,.role-switch button:hover{background:#fff;color:#087c71;box-shadow:0 1px 3px #26483c18}@media(max-width:680px){.role-switch{display:none}}</style>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="#" aria-label="AushadhiTrack home"><span class="brand-mark">✚</span><span>Aushadhi<span>Track</span></span></a>
+        <p class="brand-sub">Medicine integrity network</p>
+        <nav class="nav" id="nav">
+          <button class="nav-item active" data-view="admin"><span>▦</span> Command centre</button>
+          <button class="nav-item" data-view="batches"><span>⊞</span> Batch registry</button>
+          <button class="nav-item" data-view="flags"><span>◉</span> Risk inbox <b id="navRisk">9</b></button>
+          <button class="nav-item" data-view="vendor"><span>▤</span> Vendor counter</button>
+          <button class="nav-item" data-view="receiver"><span>⌁</span> Receiver portal</button>
+        </nav>
+        <div class="side-bottom">
+          <div class="operator"><div class="avatar">DC</div><div><strong>District Coordinator</strong><small>Demo administrator</small></div><span>⌄</span></div>
+          <div class="security-note"><span>◈</span><div><strong>Append-only ledger</strong><small>Prototype audit safeguard active</small></div></div>
+        </div>
+      </aside>
+      <main class="main">
+        <header class="topbar"><div id="breadcrumbs">ADMINISTRATION / COMMAND CENTRE</div><div class="role-switch" aria-label="Switch demo role"><button data-role="admin">Admin</button><button data-role="vendor">Vendor</button><button data-role="receiver">Receiver</button></div><div class="top-actions"><span class="status-dot"></span><span>System live</span><button class="icon-button" aria-label="Notifications">♧<i>3</i></button></div></header>
+        <section id="view-root"></section>
+      </main>
+    </div>
+    <div class="toast" id="toast"></div>
+    <div class="modal-backdrop hidden" id="modal"><div class="modal" id="modal-content"></div></div>
+    <script src="app.js"></script>
+  </body>
+</html>
