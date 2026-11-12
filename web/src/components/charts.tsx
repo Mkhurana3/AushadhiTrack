@@ -1,7 +1,15 @@
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { fmtShort } from '../lib/format';
 import { START, TODAY, addDays, daysBetween } from '../lib/master';
 import type { Sale } from '../lib/types';
 import { Legend } from './ui';
+
+/** Horizontally scrollable on narrow screens, starting at the right so the latest days are in view. */
+function ChartWrap({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => { const el = ref.current; if (el) el.scrollLeft = el.scrollWidth; }, []);
+  return <div className="chart-wrap" ref={ref}>{children}</div>;
+}
 
 /** Strips billed per day over the 60-day window, with flagged bills in red and dated markers. */
 export function SalesChart({ lines, flagged, markers, flagLabel = 'On a flagged bill' }: {
@@ -22,7 +30,7 @@ export function SalesChart({ lines, flagged, markers, flagLabel = 'On a flagged 
   const total = per.reduce((s, x) => s + x, 0);
   return (
     <>
-      <div className="chart-wrap">
+      <ChartWrap>
         <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${total} strips billed over ${days} days, up to ${Math.max(...per)} in a day`}>
           <line x1={L} x2={W} y1={y(0)} y2={y(0)} className="axis" />
           <line x1={L} x2={W} y1={y(max)} y2={y(max)} className="grid" />
@@ -40,7 +48,7 @@ export function SalesChart({ lines, flagged, markers, flagLabel = 'On a flagged 
             <text key={d} x={i === ticks.length - 1 ? W - 2 : xOf(d)} y={H - 6} className="tick" textAnchor={i === ticks.length - 1 ? 'end' : 'middle'}>{fmtShort(d)}</text>
           ))}
         </svg>
-      </div>
+      </ChartWrap>
       <Legend items={[['bar', 'Billed'], ['bar flagged', flagLabel]]} />
     </>
   );
@@ -55,7 +63,7 @@ export function HourChart({ own, peers }: { own: Sale[]; peers: Sale[] }) {
   const step = (W - L) / hours.length, y = (v: number) => T + (H - B - T) * (1 - v / max);
   return (
     <>
-      <div className="chart-wrap">
+      <ChartWrap>
         <svg className="chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Share of bills by hour of the day, this kendra against the others">
           <line x1={L} x2={W} y1={y(0)} y2={y(0)} className="axis" />
           <text x={L - 6} y={y(max) + 4} className="tick" textAnchor="end">{Math.round(max * 100)}%</text>
@@ -67,7 +75,7 @@ export function HourChart({ own, peers }: { own: Sale[]; peers: Sale[] }) {
             </g>
           ))}
         </svg>
-      </div>
+      </ChartWrap>
       <Legend items={[['bar', 'This kendra'], ['bar flagged', 'This kendra, 20:00 to closing'], ['bar peer', 'Other kendras']]} />
     </>
   );

@@ -7,6 +7,8 @@ export interface CaseEvent { status: CaseStatus; note: string; at: string; actor
 export interface Recall { batch: string; reason: string; ref: string; date: string; seq: number }
 export interface TransferRequest { id: string; from: string; to: string; batch: string; qty: number; at: string; seq: number }
 export interface Dispatch { challan: string; to: string; items: Item[]; date: string; seq: number }
+export interface CountRecord { date: string; seq: number; batches: number; expected: number; counted: number; offBy: number }
+export interface Feedback { lead: string; label: 'useful' | 'false-alarm'; note: string; at: string; actor: string }
 export interface Receipt { kendra: string; challan: string; items: Item[]; date: string; seq: number }
 
 /** Everything the screens need, rebuilt from the ledger. Keys like "GZB01|PCM25A11" are kendra|batch. */
@@ -18,6 +20,7 @@ export interface Db {
   cases: Record<string, CaseEvent[]>; complaints: (Complaint & { at: string; seq: number })[];
   transferRequests: TransferRequest[]; transfersDone: Record<string, { at: string; qty: number }>;
   dispatches: Dispatch[]; receipts: Receipt[];
+  countHistory: Record<string, CountRecord[]>; feedback: Record<string, Feedback>;
 }
 
 export const kb = (kendra: string, batch: string) => `${kendra}|${batch}`;
@@ -26,7 +29,7 @@ export function derive(events: LedgerEvent[]): Db {
   const db: Db = {
     onHand: {}, received: {}, dispatched: {}, sold: {}, written: {}, tin: {}, tout: {},
     counts: {}, lastCount: {}, sales: [], writeoffs: [], recalls: {}, acks: {}, cases: {},
-    complaints: [], transferRequests: [], transfersDone: {}, dispatches: [], receipts: [],
+    complaints: [], transferRequests: [], transfersDone: {}, dispatches: [], receipts: [], countHistory: {}, feedback: {},
   };
   const add = (o: Counter, k: string, v: number) => { o[k] = (o[k] ?? 0) + v; };
   const sale = (e: LedgerEvent, kendra: string, date: string, [bill, time, phone, batch, qty, price]: BillRow) => {
@@ -65,11 +68,16 @@ export function derive(events: LedgerEvent[]): Db {
             received: db.received[k] ?? 0, sold: db.sold[k] ?? 0, written: db.written[k] ?? 0, tin: db.tin[k] ?? 0, tout: db.tout[k] ?? 0 };
         });
         db.lastCount[e.data.kendra] = date;
+        (db.countHistory[e.data.kendra] ??= []).push(e.data.items.reduce((r, [b, c]) => {
+          const exp = db.counts[kb(e.data.kendra, b)].expected;
+          return { ...r, batches: r.batches + 1, expected: r.expected + exp, counted: r.counted + c, offBy: r.offBy + Math.abs(c - exp) };
+        }, { date, seq: e.seq, batches: 0, expected: 0, counted: 0, offBy: 0 } as CountRecord));
         break;
       case 'recall': db.recalls[e.data.batch] = { ...e.data, date, seq: e.seq }; break;
       case 'ack': (db.acks[e.data.batch] ??= {})[e.data.kendra] = date; break;
       case 'case': (db.cases[e.data.case] ??= []).push({ ...e.data, at: e.at, actor: e.actor, seq: e.seq }); break;
       case 'complaint': db.complaints.push({ ...e.data, at: e.at, seq: e.seq }); break;
+      case 'feedback': db.feedback[e.data.lead] = { ...e.data, at: e.at, actor: e.actor }; break;
       case 'transfer-request': db.transferRequests.push({ ...e.data, at: e.at, seq: e.seq }); break;
       case 'transfer': {
         const d = e.data;

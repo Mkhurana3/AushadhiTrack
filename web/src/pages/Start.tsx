@@ -25,6 +25,16 @@ export function Start() {
           <h1>Follows every strip of Jan Aushadhi medicine from the warehouse to the patient, and shows where it goes missing.</h1>
           <p>A working prototype for SIH 2026 (SIH26198). It runs on one synthetic district: 8 kendras in {DISTRICT}, 10 medicines and 60 days of history in a {events.length}-record hash-chained ledger. Seven explainable rules and a pattern model trained in Python ({MODEL.meta.algorithm}) look for problems.</p>
           <ol className="flow">{STOPS.map(([t, d]) => <li key={t}><strong>{t}</strong><span>{d}</span></li>)}</ol>
+          <section className="tour" aria-labelledby="tour-h">
+            <h2 id="tour-h">See it work in three minutes</h2>
+            <ol>
+              <li><Link to="/officer/cases/C-04186">Open the Loni case</Link> and read the reconciliation: 9 strips of Amoxyclav missing at the last count.</li>
+              <li><Link to="/officer/ledger">Alter an old ledger record</Link> to hide them. The case drops to low risk, and the hash chain catches the edit.</li>
+              <li><Link to="/officer/cases/M-03104">See the lead only the model found</Link>: bursts of bills just before closing at Raj Nagar Extension.</li>
+              <li><Link to="/kendra/GZB02">Make a bill at Vaishali</Link>. The recalled Azithromycin batch can no longer be selected.</li>
+              <li>Choose <em>Open as patient</em> on the receipt, or scan its QR code with a phone, to check the signed bill.</li>
+            </ol>
+          </section>
         </section>
         <section className="start-roles" aria-labelledby="roles-h">
           <h2 id="roles-h">Open the prototype as</h2>
