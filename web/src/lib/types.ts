@@ -30,7 +30,8 @@ export type LedgerEvent =
   | Base<'case', { case: string; status: CaseStatus; note: string }>
   | Base<'complaint', Complaint>
   | Base<'transfer-request', { id: string; from: string; to: string; batch: string; qty: number }>
-  | Base<'transfer', { request: string; from: string; to: string; batch: string; qty: number }>;
+  | Base<'transfer', { request: string; from: string; to: string; batch: string; qty: number }>
+  | Base<'feedback', { lead: string; label: 'useful' | 'false-alarm'; note: string }>;
 
 export type EventType = LedgerEvent['type'];
 export type DataOf<T extends EventType> = Extract<LedgerEvent, { type: T }>['data'];

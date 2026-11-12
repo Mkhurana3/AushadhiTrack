@@ -73,6 +73,13 @@ export function Shell({ ctx, who, role, nav, children }: { ctx: ReactNode; who: 
   );
 }
 
+/** Prints only the open dialog (a receipt), not the page behind it. */
+export function printDialog() {
+  document.body.classList.add('print-dialog');
+  window.print();
+  document.body.classList.remove('print-dialog');
+}
+
 export function Dialog({ open, onClose, label, children }: { open: boolean; onClose: () => void; label: string; children: ReactNode }) {
   const ref = useRef<HTMLDialogElement>(null);
   useEffect(() => {

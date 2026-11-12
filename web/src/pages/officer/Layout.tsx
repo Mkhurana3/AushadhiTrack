@@ -25,6 +25,7 @@ export function OfficerLayout() {
     <Shell ctx={`${DISTRICT} district`} who={name} role="PMBI field officer" nav={[
       { to: '/officer', label: 'Overview', end: true },
       { to: '/officer/cases', label: 'Cases', count: openFindings(ev.findings).length },
+      { to: '/officer/kendras', label: 'Kendras' },
       { to: '/officer/stock', label: 'Expiring stock', count: ev.advisories.filter(a => !(a.request || a.done)).length },
       { to: '/officer/batches', label: 'Batches and recalls' },
       { to: '/officer/model', label: 'Pattern model' },
@@ -104,7 +105,7 @@ function Matrix({ findings }: { findings: Finding[] }) {
       <div className="matrix-wrap"><table className="matrix">
         <thead><tr><td />{DRUGS.map(d => <th key={d.code} scope="col" title={d.name}><span>{d.short}</span></th>)}</tr></thead>
         <tbody>{KENDRAS.map(k => (
-          <tr key={k.id}><th scope="row">{k.name}</th>{DRUGS.map(d => {
+          <tr key={k.id}><th scope="row"><Link className="row-link" to={`/officer/kendras/${k.id}`}>{k.name}</Link></th>{DRUGS.map(d => {
             const f = byPair.get(k.id + '|' + d.code);
             if (!f || f.kind === 'report') return <td key={d.code}><span className="cell" aria-hidden="true" /></td>;
             const model = f.kind === 'model';

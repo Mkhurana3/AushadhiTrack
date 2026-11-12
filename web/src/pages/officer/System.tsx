@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { PageHead } from '../../components/ui';
-import { fmtDate, fmtShort, num } from '../../lib/format';
+import { fmtDate, fmtShort, num, plural } from '../../lib/format';
 import { DRUG, KENDRA } from '../../lib/master';
 import { DEFAULT_RULES, MODEL, RULES, type RuleConfig } from '../../lib/rules';
 import { store, useApp } from '../../lib/store';
@@ -103,7 +103,7 @@ function LimitInput({ setting, label, min, max }: { setting: keyof RuleConfig; l
 const fmtFeature = (v: number, unit: string) => unit === '%' ? `${(v * 100).toFixed(1)}%` : unit === 'x' ? `${v.toFixed(1)}×` : v.toFixed(1);
 
 export function ModelPage() {
-  const { ev } = useApp();
+  const { ev, db } = useApp();
   const m = MODEL.meta;
   const flagged = MODEL.rows.filter(r => r.flagged);
   const caseOf = (kendra: string, drug: string) => ev.findings.find(f => f.kind !== 'report' && f.kendra.id === kendra && f.drug.code === drug);
@@ -145,6 +145,16 @@ export function ModelPage() {
             );
           })}</tbody>
         </table></div>
+      </section>
+      <section className="panel" aria-labelledby="fbs-h"><h2 id="fbs-h">Officer feedback</h2>
+        {Object.keys(db.feedback).length ? (
+          <>
+            <p className="sub">{plural(Object.values(db.feedback).filter(f => f.label === 'useful').length, 'useful lead', 'useful leads')}, {plural(Object.values(db.feedback).filter(f => f.label === 'false-alarm').length, 'false alarm')}. These answers are exported as labels for the next training run.</p>
+            <ul className="plain">{Object.values(db.feedback).map(f => (
+              <li key={f.lead}><Link to={`/officer/cases/${f.lead}`}>{f.lead}</Link>: {f.label === 'useful' ? 'useful' : 'false alarm'}, {fmtShort(f.at)}{f.note ? `, “${f.note}”` : ''}</li>
+            ))}</ul>
+          </>
+        ) : <p className="empty-line">No feedback yet. Open a model lead and say whether it was worth checking; the answers become labels for the next training run.</p>}
       </section>
       <section className="panel explain" aria-labelledby="feat-h"><h2 id="feat-h">What it looks at</h2>
         <p>Every measure is compared with the same medicine at the other kendras, using the median and the median absolute deviation, so a fast-selling medicine is not mistaken for a suspicious one. An explanation lists the measures more than {m.explain_z} deviations from the others.</p>

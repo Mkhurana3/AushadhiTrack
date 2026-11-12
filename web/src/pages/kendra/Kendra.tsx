@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Navigate, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
-import { Dialog, Mark, PageHead, QrCode, Shell } from '../../components/ui';
+import { Dialog, Mark, PageHead, QrCode, Shell, printDialog } from '../../components/ui';
 import { kb, type Db } from '../../lib/derive';
 import { fmtDate, inr } from '../../lib/format';
 import { BATCH, BATCHES, DRUG, DRUGS, KENDRA, KENDRAS, TODAY, batchesOf, daysBetween, kname } from '../../lib/master';
@@ -156,7 +156,7 @@ function Receipt({ sale, onClose }: { sale: Sale; onClose: () => void }) {
         <div className="r-qr"><QrCode text={url} label="QR code that opens this bill’s check page" /><p>Scan to check that this bill is genuine and the price is right. The code is signed with this kendra’s key, so it works on any phone.</p></div>
       </div>
       <div className="dialog-actions">
-        <button type="button" className="btn" onClick={() => window.print()}>Print</button>
+        <button type="button" className="btn" onClick={printDialog}>Print</button>
         <button type="button" className="btn" onClick={() => { onClose(); navigate(`/verify?${query}`); }}>Open as patient</button>
         <button type="button" className="btn primary" onClick={onClose} autoFocus>Done</button>
       </div>

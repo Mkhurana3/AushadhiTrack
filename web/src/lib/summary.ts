@@ -6,7 +6,7 @@ const sumQty = (items: Item[]) => items.reduce((s, i) => s + i[1], 0);
 
 export const TYPE_LABEL: Record<EventType, string> = {
   dispatch: 'Dispatch', receipt: 'Receipt', dayclose: 'Day close', sale: 'Bill', count: 'Stock count', recall: 'Recall',
-  ack: 'Recall noted', case: 'Case update', complaint: 'Patient report', 'transfer-request': 'Transfer request', transfer: 'Transfer',
+  ack: 'Recall noted', case: 'Case update', complaint: 'Patient report', 'transfer-request': 'Transfer request', transfer: 'Transfer', feedback: 'Model feedback',
 };
 
 export function summarize(e: LedgerEvent): string {
@@ -24,6 +24,7 @@ export function summarize(e: LedgerEvent): string {
     case 'case': return `Case ${e.data.case} set to ${e.data.status.toLowerCase()}`;
     case 'complaint': return `Patient report ${e.data.ref}: ${e.data.reasonText.toLowerCase()}`;
     case 'transfer-request': return `Transfer requested: ${e.data.qty} strips of ${e.data.batch}, ${kname(e.data.from)} to ${kname(e.data.to)}`;
+    case 'feedback': return `Lead ${e.data.lead} marked ${e.data.label === 'useful' ? 'useful' : 'a false alarm'}`;
     case 'transfer': return `${kname(e.data.from)} sent ${e.data.qty} strips of ${e.data.batch} to ${kname(e.data.to)}`;
   }
 }
