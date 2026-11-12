@@ -1,77 +1,105 @@
-# AushadhiTrack — SIH 2026 Prototype
+# AushadhiTrack
 
-AushadhiTrack is a Jan Aushadhi medicine-integrity prototype for **Smart India Hackathon 2026 — SIH26198**.
+A prototype for Smart India Hackathon 2026, problem statement SIH26198.
 
-It helps district coordinators spot possible medicine diversion, excess write-offs, expired-stock sales and dormant stock by reconciling warehouse dispatches with kendra sales and inventory records — and every flag explains exactly which numbers triggered it.
+AushadhiTrack follows Jan Aushadhi medicine strip by strip, from the warehouse to the kendra to the patient. It shows where stock or money goes missing and explains every flag with the numbers behind it.
 
 **Live demo:** https://mkhurana3.github.io/AushadhiTrack/
+**Classic version** (the earlier no-build version): https://mkhurana3.github.io/AushadhiTrack/classic/
 
-## Features
+The demo runs on one synthetic district: 8 kendras in Ghaziabad, 10 medicines, 20 batches and 60 days of dispatches, bills, write-offs and weekly stock counts. Every name and figure is invented.
 
-- **Command centre** — live counts, a priority review queue and a risk distribution chart, all computed from the data
-- **Explainable risk inbox** — every flagged record shows the rules it broke, the numbers behind them and a severity score; mark records as reviewed or export the list as CSV
-- **Batch registry** — dispatch batches to a kendra; stock is added only when the kendra confirms receipt
-- **Vendor counter** — billing that blocks sales of expired stock or more units than are on hand, with a masked-number receipt and verification code
-- **Citizen verification** — anyone can check a bill code; unknown codes are rejected as not in the ledger
-- **Append-only event ledger** — dispatches, receipts, sales, blocked sales, reviews and verifications are all recorded
-- **Role-based demo login** — district coordinator, kendra vendor and citizen each see only their own tools
+## How it fits together
 
-## How the rules work
+```
+ml/   Python   simulate the district ──► hash-chained ledger ──► features ──► Isolation Forest
+                                              │                                     │
+                                         ledger.json                            model.json
+                                              ▼                                     ▼
+web/  React + TypeScript   re-verify every hash ──► derive stock ──► 7 rules + model leads ──► screens
+```
 
-Each inventory record is checked against four rules. Each rule that fires adds to a severity score.
+- **One source of truth.** Every dispatch, receipt, bill, stock count, recall and case decision is a record in an append-only ledger. Stock levels and cases are always derived from the ledger and never stored separately.
+- **Tamper evidence.** Each record stores a SHA-256 hash of its contents and of the record before it. The Python pipeline writes the hashes, and the web app recomputes them in TypeScript. A shared test makes sure both languages produce the same hash for the same record. The Ledger page has a demo: it slips a fake bill into an old day's records, which hides missing stock and drops a case from high to low risk. The chain check catches the edit straight away.
+- **Signed receipts.** Each kendra's billing device signs every bill with its own Ed25519 key. The QR code on a receipt carries the bill details and the signature, so a patient's phone can confirm the bill without any of the kendra's data. A receipt with an edited price fails the check.
 
-| Rule | Fires when | Score |
+## What it finds
+
+**Rules.** These are deterministic checks, and every one is explained with arithmetic.
+
+| Rule | Compares | Weight |
 | --- | --- | --- |
-| Stock balance | Dispatched − sold − written off ≠ reported stock | +3 |
-| Write-off ratio | More than 15% of dispatched stock is written off | +1 (+2 above 30%) |
-| Expired-stock sale | A sale is recorded after the batch's expiry date | +2 |
-| Dormant stock | Stock is on hand but nothing has sold for 10+ days | +1 |
+| Stock count mismatch | Physical count against what the ledger says should be on the shelf | 3 |
+| Recalled batch billed | Bills for a batch after its recall | 3 |
+| Short delivery | Strips dispatched by the warehouse against strips the kendra acknowledged | 2 |
+| Expired batch billed | Bill date against the batch expiry date | 2 |
+| Billed above MRP | Price per strip against MRP | 2 |
+| Bulk buying | One mobile number buying more than 12 strips of a medicine in 30 days | 2 |
+| High write-offs | Strips written off as a share of strips received (limit 15%) | 1, or 2 above 30% |
 
-**Risk level:** score 3 or more → **High**, 2 → **Medium**, 1 → **Low**.
+A score of 3 or more is high risk, 2 is medium and 1 is low. The limits can be changed live on the Rules page.
 
-The rules live in `app.js` (`RULES` and `evaluate()`), so thresholds are easy to tune.
+**Pattern model.** This is an unsupervised model that finds patterns nobody wrote a rule for.
 
-## Demo data
+- **How it works.** It is an Isolation Forest (scikit-learn, 500 trees). It scores each medicine at each kendra on 8 behavioural measures, including:
+  - the share of bills made in the last 30 minutes before closing
+  - bills to mobile numbers never seen again
+  - the share of strips bought by the top customer
+  - sales growth.
 
-The prototype uses clearly labelled **synthetic data** with a reference date of 2 September 2026:
+  Each measure is a robust z-score against the same medicine at the other kendras, so a fast-selling medicine is not mistaken for a suspicious one.
+- **What it found.** In the demo the model finds phantom billing at Raj Nagar Extension. For three weeks, bursts of 2-strip bills went to new numbers just before closing. The stock really left the kendra, so the count matches and no rule fires. The model also agrees with three of the rule cases.
 
-- 7 Jan Aushadhi Kendras around Noida, Ghaziabad and Meerut
-- 10 priority medicine SKUs
-- 70 inventory records, 9 of which are seeded with suspicious patterns
+**Operations**
+- **Expiring stock.** Batches that will expire before they sell, with a suggested transfer to a kendra that sells faster.
+- **Recalls.** Recording a recall blocks the batch at every counter. The officer can see which kendras haven't acknowledged it and which are still billing it.
+- **Case workflow.** Cases move between open, in inquiry and closed. Closing a case needs a note.
+- **Patient side.** In English and Hindi, a patient can check a bill or a strip's batch number and report a problem, which reaches the district office as a case.
 
-Nothing is saved: refreshing the page resets the demo.
-
-## Run locally
-
-No build step or install is needed — it is plain HTML, CSS and JavaScript.
+## Run it locally
 
 ```bash
-git clone https://github.com/Mkhurana3/AushadhiTrack.git
-cd AushadhiTrack
-python3 -m http.server 4173
+# Data and model (Python 3.11+)
+cd ml
+pip install -r requirements.txt
+python -m pytest
+python -m aushadhi_ml --out ../web/src/data     # rebuilds ledger.json and model.json
+
+# Web app (Node 20+)
+cd ../web
+npm install
+npm run dev          # http://localhost:5173
+npm test             # Vitest
+npm run build        # static site in web/dist
+npm run build:single # one self-contained HTML file in web/dist-single
 ```
 
-Then open http://localhost:4173 (or just double-click `index.html`).
+Actions in the demo are kept in your browser's local storage. To start again, use "reset the demo" on the Ledger page.
 
-## Project structure
+## Deployment
 
-```text
-index.html    page shell: sidebar, top bar, modal and toast containers
-styles.css    all styling, including the responsive layout
-app.js        synthetic data, rule engine, views and event handling
-favicon.svg   site icon
-```
+On every push to `main`, `.github/workflows/deploy.yml` does the following:
+- runs the Python tests
+- rebuilds the data and fails if the committed ledger differs
+- type-checks, tests and builds the web app
+- adds `classic/` and deploys everything to GitHub Pages.
 
-## Production roadmap
+In the repository's settings, Pages must be set to deploy from **GitHub Actions**.
 
-A production version would use:
+## Layout
 
-- React frontend
-- FastAPI backend
-- PostgreSQL database
-- Authorised PMBI warehouse and POS integrations
-- MSG91 or Twilio for consent-gated SMS
-- Signed QR verification tokens
-- Role-based access controls and append-only audit records
+| Path | What it holds |
+| --- | --- |
+| `ml/aushadhi_ml/` | `simulate.py` (the synthetic district and its planted scenarios), `ledger.py` (hash chain), `features.py`, `model.py` |
+| `web/src/lib/` | Typed ledger, derivation, rules, Ed25519 receipt signing, app store |
+| `web/src/pages/` | Officer, kendra and patient screens |
+| `web/tests/`, `ml/tests/` | Vitest and pytest suites |
+| `classic/` | The earlier version: plain HTML, CSS and JavaScript, no build step |
 
-Any Aadhaar-linked feature would require explicit consent, tokenisation, encryption, minimal data storage and a legal/security review. Aadhaar must not be used as a public identifier or default login.
+## What a real rollout would need
+
+- A server-side ledger, with the latest hash published daily somewhere the kendras cannot edit.
+- Private keys held on each kendra's billing device or a hardware module. The prototype derives demo keys from a published seed so that it can sign in the browser.
+- Integration with the existing Jan Aushadhi billing software and warehouse dispatch records.
+- Sign-in with real roles, an audit of officer actions, and OTP-verified patient reports.
+- Model retraining every night on real data, with officers' case outcomes fed back as labels.
