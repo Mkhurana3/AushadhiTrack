@@ -4,6 +4,7 @@ import { Counter, KendraLayout, KendraStock, Notices } from './pages/kendra/Kend
 import { CaseDetail, Cases } from './pages/officer/Cases';
 import { OfficerLayout, Overview } from './pages/officer/Layout';
 import { BatchDetail, Batches, ExpiringStock } from './pages/officer/Operations';
+import { KendraDetail, Kendras } from './pages/officer/Kendras';
 import { LedgerPage, ModelPage, RulesPage } from './pages/officer/System';
 import { Start } from './pages/Start';
 import { Verify } from './pages/Verify';
@@ -19,6 +20,8 @@ export function App() {
             <Route index element={<Overview />} />
             <Route path="cases" element={<Cases />} />
             <Route path="cases/:id" element={<CaseDetail />} />
+            <Route path="kendras" element={<Kendras />} />
+            <Route path="kendras/:kid" element={<KendraDetail />} />
             <Route path="stock" element={<ExpiringStock />} />
             <Route path="batches" element={<Batches />} />
             <Route path="batches/:id" element={<BatchDetail />} />

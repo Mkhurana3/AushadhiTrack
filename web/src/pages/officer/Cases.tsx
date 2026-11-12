@@ -40,7 +40,7 @@ export function Cases() {
           {rows.map(f => (
             <tr key={f.id} className="clickable" onClick={e => { if (!(e.target as HTMLElement).closest('a')) navigate(`/officer/cases/${f.id}`); }}>
               <td className="nowrap"><Link to={`/officer/cases/${f.id}`}>{f.id}</Link></td>
-              <td>{f.kendra?.name ?? 'Not given'}</td>
+              <td>{f.kendra ? <Link to={`/officer/kendras/${f.kendra.id}`}>{f.kendra.name}</Link> : 'Not given'}</td>
               <td>{f.drug?.name ?? 'Patient report'}</td>
               <td>{f.kind === 'report' ? f.complaint.reasonText : caseWhy(f)}</td>
               <td className="num">{f.value ? inr(f.value) : ''}</td>
@@ -79,8 +79,13 @@ export function CaseDetail() {
             : `Case ${f.id}. ${f.kendra.name} kendra (${f.kendra.id}), ${f.drug.name}, ${f.drug.pack}, MRP ₹${f.drug.mrp}.`}</p>
           <h1>{caseTitle(f)}</h1>
         </div>
-        <div className="case-tags"><RiskTag risk={f.risk} lead={f.kind === 'model'} /><StatusTag status={f.status} /></div>
+        <div className="case-tags">
+          <RiskTag risk={f.risk} lead={f.kind === 'model'} /><StatusTag status={f.status} />
+          <button className="btn small" type="button" onClick={() => window.print()}>Print case file</button>
+        </div>
       </div>
+      <p className="print-only">Case file printed {fmtDate(new Date().toISOString())} from AushadhiTrack. Synthetic data for SIH 2026 (SIH26198).</p>
+      {f.kendra && <p className="case-links"><Link to={`/officer/kendras/${f.kendra.id}`}>Everything at {f.kendra.name}</Link>{f.kind !== 'report' && f.drug && <> <Link to={`/officer/batches/${batchesOf(f.drug.code)[0].id}`}>{f.drug.short} batches</Link></>}</p>}
       <div className="case-grid">
         <div className="case-main">
           {f.kind === 'rule' && <RuleBody f={f} />}
@@ -130,7 +135,7 @@ function RuleBody({ f }: { f: RuleFinding }) {
       </section>
       <section className="panel" aria-labelledby="sales-h"><h2 id="sales-h">Strips billed per day</h2>
         <SalesChart lines={f.lines} flagged={new Set(bills.map(b => b.bill))} markers={markersFor(f.drug.code, f.snap.date, db.recalls)} /></section>
-      {bills.length > 0 && <BillsTable bills={bills} mrp={f.drug.mrp} />}
+      {bills.length > 0 && <BillsTable bills={bills} mrp={f.drug.mrp} file={`${f.id}-flagged-bills`} />}
     </>
   );
 }
@@ -164,10 +169,22 @@ function Sheet({ f, transit }: { f: RuleFinding; transit: boolean }) {
   );
 }
 
-function BillsTable({ bills, mrp, title = 'Flagged bills' }: { bills: (Sale & { why: string[] })[]; mrp: number; title?: string }) {
+function downloadCsv(name: string, rows: (string | number)[][]) {
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function BillsTable({ bills, mrp, title = 'Flagged bills', file }: { bills: (Sale & { why: string[] })[]; mrp: number; title?: string; file: string }) {
   const shown = bills.slice(0, 12);
+  const download = () => downloadCsv(`${file}.csv`, [['Date', 'Time', 'Bill', 'Kendra', 'Customer (masked)', 'Batch', 'Strips', 'Price per strip', 'MRP', 'Flag'],
+    ...bills.map(b => [b.date, b.time, b.bill, b.kendra, mask(b.phone), b.batch, b.qty, b.price, mrp, b.why.join('; ')])]);
   return (
-    <section className="panel" aria-labelledby="ev-h"><h2 id="ev-h">{title}</h2>
+    <section className="panel" aria-labelledby="ev-h">
+      <div className="panel-head"><h2 id="ev-h">{title}</h2><button className="btn small no-print" type="button" onClick={download}>Download all {bills.length} as CSV</button></div>
       <div className="table-wrap"><table className="data">
         <thead><tr><th>Date</th><th>Time</th><th>Bill</th><th>Customer</th><th>Batch</th><th className="num">Strips</th><th className="num">Per strip</th><th>Flag</th></tr></thead>
         <tbody>{shown.map(b => (
@@ -210,8 +227,32 @@ function ModelBody({ f }: { f: ModelFinding }) {
       <section className="panel" aria-labelledby="hr-h"><h2 id="hr-h">When the bills are made</h2><HourChart own={f.lines} peers={peers} /></section>
       <section className="panel" aria-labelledby="sales-h"><h2 id="sales-h">Strips billed per day</h2>
         <SalesChart lines={f.lines} flagged={new Set(late.map(s => s.bill))} markers={[]} flagLabel="Billed after 20:30" /></section>
-      {lateBills.length > 0 && <BillsTable bills={lateBills} mrp={f.drug.mrp} title="Bills after 20:30" />}
+      {lateBills.length > 0 && <BillsTable bills={lateBills} mrp={f.drug.mrp} title="Bills after 20:30" file={`${f.id}-late-bills`} />}
+      <FeedbackPanel id={f.id} />
     </>
+  );
+}
+
+function FeedbackPanel({ id }: { id: string }) {
+  const { db } = useApp();
+  const fb = db.feedback[id];
+  const [note, setNote] = useState('');
+  const give = (label: 'useful' | 'false-alarm') => {
+    store.append('feedback', officerActor, { lead: id, label, note: note.trim() });
+    setNote('');
+    toast(label === 'useful' ? 'Marked useful. It will count as a confirmed pattern at the next training run.' : 'Marked as a false alarm. The next training run will learn from it.');
+  };
+  return (
+    <section className="panel no-print" aria-labelledby="fb-h"><h2 id="fb-h">Was this lead useful?</h2>
+      <p className="sub">Your answer is saved in the ledger and becomes a label for the next training run, so the model learns which patterns matter in this district.</p>
+      {fb && <p className={`callout ${fb.label === 'useful' ? 'ok' : 'bad'}`}>Marked {fb.label === 'useful' ? 'useful' : 'a false alarm'} by {fb.actor.split(',')[0]} on {fmtDate(fb.at)}{fb.note ? `: “${fb.note}”` : '.'} You can change the answer below.</p>}
+      <label htmlFor="fb-note" className="sr">Note</label>
+      <input id="fb-note" value={note} onChange={e => setNote(e.target.value)} placeholder="Optional: what did you find?" />
+      <div className="actions fb-actions">
+        <button className="btn" type="button" onClick={() => give('useful')}>Useful, worth checking</button>
+        <button className="btn" type="button" onClick={() => give('false-alarm')}>False alarm</button>
+      </div>
+    </section>
   );
 }
 
