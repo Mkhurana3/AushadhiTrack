@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AushadhiTrack</title>
+  <meta name="description" content="Prototype for SIH 2026 (SIH26198): tracks Jan Aushadhi medicine from warehouse to patient and explains where stock goes missing.">
+  <meta name="theme-color" content="#2b45b5">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <div id="app"></div>
+  <dialog id="dlg"></dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">AushadhiTrack needs JavaScript to run. It works offline once loaded and sends nothing to a server.</p></noscript>
+  <!-- QR codes on receipts (MIT licence, Kazuhiko Arase). The app still works without it. -->
+  <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@2.0.4/dist/qrcode.js" defer></script>
+  <script src="ledger.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
