@@ -37,9 +37,9 @@ export function KendraLayout() {
   );
   return (
     <Shell ctx={ctx} who="Pharmacist on duty" role="Kendra pharmacist" nav={[
-      { to: `/kendra/${kid}`, label: 'New bill', end: true },
-      { to: `/kendra/${kid}/stock`, label: 'Stock' },
-      { to: `/kendra/${kid}/notices`, label: 'Notices', count: pending, alert: true },
+      { to: `/kendra/${kid}`, label: 'New bill', icon: 'bill', end: true },
+      { to: `/kendra/${kid}/stock`, label: 'Stock', icon: 'batches' },
+      { to: `/kendra/${kid}/notices`, label: 'Notices', icon: 'notices', count: pending, alert: true },
     ]}>
       <Outlet context={k} />
     </Shell>
