@@ -13,7 +13,7 @@ export interface Receipt { kendra: string; challan: string; items: Item[]; date:
 
 /** Everything the screens need, rebuilt from the ledger. Keys like "GZB01|PCM25A11" are kendra|batch. */
 export interface Db {
-  onHand: Counter; received: Counter; dispatched: Counter; sold: Counter; written: Counter; tin: Counter; tout: Counter;
+  onHand: Counter; received: Counter; dispatched: Counter; dispatchedReceived: Counter; sold: Counter; written: Counter; tin: Counter; tout: Counter;
   counts: Record<string, CountSnapshot>; lastCount: Record<string, string>;
   sales: Sale[]; writeoffs: { kendra: string; batch: string; qty: number; why: string; date: string }[];
   recalls: Record<string, Recall>; acks: Record<string, Record<string, string>>;
@@ -27,7 +27,7 @@ export const kb = (kendra: string, batch: string) => `${kendra}|${batch}`;
 
 export function derive(events: LedgerEvent[]): Db {
   const db: Db = {
-    onHand: {}, received: {}, dispatched: {}, sold: {}, written: {}, tin: {}, tout: {},
+    onHand: {}, received: {}, dispatched: {}, dispatchedReceived: {}, sold: {}, written: {}, tin: {}, tout: {},
     counts: {}, lastCount: {}, sales: [], writeoffs: [], recalls: {}, acks: {}, cases: {},
     complaints: [], transferRequests: [], transfersDone: {}, dispatches: [], receipts: [], countHistory: {}, feedback: {},
   };
@@ -50,6 +50,7 @@ export function derive(events: LedgerEvent[]): Db {
       case 'receipt':
         e.data.items.forEach(([b, q]) => { add(db.received, kb(e.data.kendra, b), q); add(db.onHand, kb(e.data.kendra, b), q); });
         db.receipts.push({ ...e.data, date, seq: e.seq });
+        db.dispatches.find(x => x.challan === e.data.challan)?.items.forEach(([b, q]) => add(db.dispatchedReceived, kb(e.data.kendra, b), q));
         break;
       case 'dayclose':
         e.data.bills.forEach(row => sale(e, e.data.kendra, e.data.date, row));
@@ -90,5 +91,8 @@ export function derive(events: LedgerEvent[]): Db {
   }
   return db;
 }
+
+/** Dispatches the kendra has not yet confirmed: stock in transit. */
+export const inTransit = (db: Db) => db.dispatches.filter(d => !db.receipts.some(r => r.challan === d.challan));
 
 export const caseStatus = (db: Db, id: string): CaseStatus => db.cases[id]?.at(-1)?.status ?? 'Open';

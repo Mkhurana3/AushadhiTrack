@@ -59,7 +59,7 @@ export function evaluate(db: Db, cfg: RuleConfig = DEFAULT_RULES): Evaluation {
     for (const d of DRUGS) {
       const bs = batchesOf(d.code);
       const sum = (o: Record<string, number>) => bs.reduce((s, b) => s + (o[kb(k.id, b.id)] ?? 0), 0);
-      const dispatched = sum(db.dispatched), received = sum(db.received), written = sum(db.written);
+      const dispatched = sum(db.dispatchedReceived), received = sum(db.received), written = sum(db.written);
       const lines = salesBy[k.id + '|' + d.code] ?? [];
       const hits: Hit[] = [];
       let value = 0;

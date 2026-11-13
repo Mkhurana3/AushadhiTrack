@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Back, Dialog, PageHead, StatusTag, useTitle } from '../../components/ui';
-import { kb } from '../../lib/derive';
+import { inTransit, kb } from '../../lib/derive';
 import { fmtDate, fmtShort, num } from '../../lib/format';
 import { BATCH, BATCHES, DRUG, KENDRAS, TODAY, WAREHOUSE, daysBetween, kname } from '../../lib/master';
 import type { RecallSummary } from '../../lib/rules';
@@ -86,10 +86,24 @@ function RecallPanel({ r }: { r: RecallSummary }) {
 export function Batches() {
   const { db, ev } = useApp();
   const navigate = useNavigate();
+  const [dispatching, setDispatching] = useState(false);
+  const transit = inTransit(db);
   const rows = [...BATCHES].sort((a, b) => (db.recalls[b.id] ? 1 : 0) - (db.recalls[a.id] ? 1 : 0) || a.expiry.localeCompare(b.expiry));
   return (
     <>
-      <PageHead title="Batches and recalls" sub="Every batch supplied to the district, where it went, and whether it can still be billed." />
+      <PageHead title="Batches and recalls" sub="Every batch supplied to the district, where it went, and whether it can still be billed."
+        actions={<button className="btn primary" type="button" onClick={() => setDispatching(true)}>Dispatch stock</button>} />
+      {transit.length > 0 && (
+        <section className="panel" aria-labelledby="transit-h"><h2 id="transit-h">In transit</h2>
+          <p className="sub">Dispatched from the warehouse and not yet confirmed by the kendra. The short-delivery rule checks each one once the kendra counts what arrived.</p>
+          <div className="table-wrap"><table className="data">
+            <thead><tr><th>Challan</th><th>To</th><th>Batch</th><th className="num">Strips</th><th>Dispatched</th></tr></thead>
+            <tbody>{transit.flatMap(t => t.items.map(([b, q]) => (
+              <tr key={t.challan + b}><td>{t.challan}</td><td>{kname(t.to)}</td><td><Link to={`/officer/batches/${b}`}>{b}</Link> <span className="small">{DRUG[BATCH[b].drug].short}</span></td><td className="num">{q}</td><td>{fmtDate(t.date)}</td></tr>
+            )))}</tbody>
+          </table></div>
+        </section>
+      )}
       {ev.recalls.map(r => <RecallPanel key={r.batch} r={r} />)}
       <section className="panel"><h2>All batches</h2>
         <div className="table-wrap"><table className="data">
@@ -106,7 +120,44 @@ export function Batches() {
           })}</tbody>
         </table></div>
       </section>
+      <Dialog open={dispatching} onClose={() => setDispatching(false)} label="Dispatch stock to a kendra">
+        <DispatchForm onDone={() => setDispatching(false)} />
+      </Dialog>
     </>
+  );
+}
+
+/** The warehouse sends stock; the kendra later confirms how much arrived. Idea carried over from the Main 2.0 branch. */
+function DispatchForm({ onDone }: { onDone: () => void }) {
+  const { db } = useApp();
+  const usable = BATCHES.filter(b => !db.recalls[b.id] && b.expiry > TODAY).sort((a, b) => DRUG[a.drug].name.localeCompare(DRUG[b.drug].name) || b.expiry.localeCompare(a.expiry));
+  const [to, setTo] = useState(KENDRAS[0].id);
+  const [batch, setBatch] = useState(usable[0].id);
+  const [qty, setQty] = useState('50');
+  const [error, setError] = useState('');
+  const submit = (e: FormEvent) => {
+    e.preventDefault();
+    const n = Number(qty);
+    if (!Number.isInteger(n) || n < 1 || n > 1000) { setError('Enter a whole number of strips from 1 to 1000.'); return; }
+    const last = Math.max(...db.dispatches.map(d => Number(d.challan.split('/').pop())));
+    const challan = `DC/26/${last + 1}`;
+    store.append('dispatch', WAREHOUSE, { challan, to, items: [[batch, n]] });
+    onDone();
+    toast(`Challan ${challan} dispatched. ${kname(to)} will be asked to confirm what arrives.`);
+  };
+  return (
+    <form className="dialog-form" onSubmit={submit} noValidate>
+      <h2>Dispatch stock to a kendra</h2>
+      <p>Records a warehouse dispatch on a new challan. The kendra confirms the count on arrival, and any shortfall is flagged automatically.</p>
+      <label htmlFor="dp-to">Kendra</label>
+      <select id="dp-to" value={to} onChange={e => setTo(e.target.value)}>{KENDRAS.map(k => <option key={k.id} value={k.id}>{k.name} ({k.id})</option>)}</select>
+      <label htmlFor="dp-batch">Batch</label>
+      <select id="dp-batch" value={batch} onChange={e => setBatch(e.target.value)}>{usable.map(b => <option key={b.id} value={b.id}>{DRUG[b.drug].name}, {b.id}, expires {fmtDate(b.expiry)}</option>)}</select>
+      <label htmlFor="dp-qty">Strips</label>
+      <input id="dp-qty" type="number" min={1} max={1000} inputMode="numeric" value={qty} onChange={e => setQty(e.target.value)} />
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <div className="dialog-actions"><button type="button" className="btn" onClick={onDone}>Cancel</button><button className="btn primary">Dispatch</button></div>
+    </form>
   );
 }
 
