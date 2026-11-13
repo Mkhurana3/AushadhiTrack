@@ -6,7 +6,6 @@ import { DISTRICT, KENDRAS } from '../lib/master';
 import { MODEL } from '../lib/rules';
 import { useApp } from '../lib/store';
 import { TYPE_LABEL, summarize } from '../lib/summary';
-import { useTheme } from '../lib/theme';
 
 const STOPS: [string, string][] = [
   ['Warehouse', 'Dispatch is matched with the kendra’s receipt'],
@@ -77,35 +76,12 @@ function ChainVisual() {
 
 export function Start() {
   useTitle('');
-  const theme = useTheme();
   const { events } = useApp();
   const lede = `A working prototype for SIH 2026 (SIH26198). It runs on one synthetic district: 8 kendras in ${DISTRICT}, 10 medicines and 60 days of history in a ${events.length}-record hash-chained ledger. Seven explainable rules and a pattern model trained in Python (${MODEL.meta.algorithm}) look for problems.`;
 
-  if (theme === 'ledger') {
-    return (
-      <>
-        <main id="main" className="start">
-          <section className="start-intro">
-            <Link className="brand big" to="/"><Mark /><span>AushadhiTrack</span></Link>
-            <h1>Follows every strip of Jan Aushadhi medicine from the warehouse to the patient, and shows where it goes missing.</h1>
-            <p>{lede}</p>
-            <Flow />
-            <Tour />
-          </section>
-          <section className="start-roles" aria-labelledby="roles-h">
-            <h2 id="roles-h">Open the prototype as</h2>
-            <Roles />
-            <p className="start-note">No passwords. What you do here is added to the ledger in this browser and kept until you reset the demo on the Ledger page.</p>
-          </section>
-        </main>
-        <Footer />
-      </>
-    );
-  }
-
   return (
     <>
-      <main id="main" className="start-studio">
+      <main id="main" className="start">
         <section className="hero">
           <div className="hero-inner">
             <div className="hero-copy">

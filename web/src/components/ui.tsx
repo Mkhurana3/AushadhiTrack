@@ -1,7 +1,6 @@
 import qrcode from 'qrcode-generator';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
-import { setTheme, useTheme } from '../lib/theme';
 import { useToast } from '../lib/toast';
 import type { CaseStatus, Risk } from '../lib/types';
 
@@ -78,20 +77,8 @@ export function Footer({ hindi = false }: { hindi?: boolean }) {
       <p>{hindi
         ? 'स्मार्ट इंडिया हैकथॉन 2026 (SIH26198) के लिए प्रोटोटाइप। सभी केंद्र, लोग और आँकड़े काल्पनिक हैं।'
         : 'Prototype for Smart India Hackathon 2026, problem statement SIH26198. Every kendra, person and figure is synthetic.'}</p>
-      <div className="foot-links"><ThemeSwitch /><a href="classic/">Classic version</a><a href="https://github.com/Mkhurana3/AushadhiTrack">Source code</a></div>
+      <div className="foot-links"><a href="classic/">Classic version</a><a href="https://github.com/Mkhurana3/AushadhiTrack">Source code</a></div>
     </footer>
-  );
-}
-
-function ThemeSwitch() {
-  const theme = useTheme();
-  return (
-    <span className="theme-switch" role="group" aria-label="Appearance">
-      <span className="ts-label">Appearance</span>
-      {(['studio', 'ledger'] as const).map(t => (
-        <button key={t} type="button" aria-pressed={theme === t} onClick={() => setTheme(t)}>{t === 'studio' ? 'Studio' : 'Ledger'}</button>
-      ))}
-    </span>
   );
 }
 
