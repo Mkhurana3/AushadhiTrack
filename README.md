@@ -5,6 +5,7 @@ A prototype for Smart India Hackathon 2026, problem statement SIH26198.
 AushadhiTrack follows Jan Aushadhi medicine strip by strip, from the warehouse to the kendra to the patient. It shows where stock or money goes missing and explains every flag with the numbers behind it.
 
 **Live demo:** https://mkhurana3.github.io/AushadhiTrack/
+
 **Classic version** (the earlier no-build version): https://mkhurana3.github.io/AushadhiTrack/classic/
 
 The demo runs on one synthetic district: 8 kendras in Ghaziabad, 10 medicines, 20 batches and 60 days of dispatches, bills, write-offs and weekly stock counts. Every name and figure is invented.
