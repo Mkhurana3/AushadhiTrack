@@ -23,14 +23,14 @@ export function OfficerLayout() {
   const name = OFFICER.split(',')[0];
   return (
     <Shell ctx={`${DISTRICT} district`} who={name} role="PMBI field officer" nav={[
-      { to: '/officer', label: 'Overview', end: true },
-      { to: '/officer/cases', label: 'Cases', count: openFindings(ev.findings).length },
-      { to: '/officer/kendras', label: 'Kendras' },
-      { to: '/officer/stock', label: 'Expiring stock', count: ev.advisories.filter(a => !(a.request || a.done)).length },
-      { to: '/officer/batches', label: 'Batches and recalls' },
-      { to: '/officer/model', label: 'Pattern model' },
-      { to: '/officer/ledger', label: 'Ledger', count: chain.ok ? 0 : 'Altered', alert: true },
-      { to: '/officer/rules', label: 'Rules' },
+      { to: '/officer', label: 'Overview', icon: 'overview', end: true },
+      { to: '/officer/cases', label: 'Cases', icon: 'cases', count: openFindings(ev.findings).length },
+      { to: '/officer/kendras', label: 'Kendras', icon: 'kendras' },
+      { to: '/officer/stock', label: 'Expiring stock', icon: 'stock', count: ev.advisories.filter(a => !(a.request || a.done)).length },
+      { to: '/officer/batches', label: 'Batches and recalls', icon: 'batches' },
+      { to: '/officer/model', label: 'Pattern model', icon: 'model' },
+      { to: '/officer/ledger', label: 'Ledger', icon: 'ledger', count: chain.ok ? 0 : 'Altered', alert: true },
+      { to: '/officer/rules', label: 'Rules', icon: 'rules' },
     ]}>
       <Outlet />
     </Shell>

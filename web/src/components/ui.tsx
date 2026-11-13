@@ -1,6 +1,7 @@
 import qrcode from 'qrcode-generator';
 import { useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { Link, NavLink, useLocation } from 'react-router-dom';
+import { setTheme, useTheme } from '../lib/theme';
 import { useToast } from '../lib/toast';
 import type { CaseStatus, Risk } from '../lib/types';
 
@@ -11,6 +12,25 @@ export function Mark({ className = 'mark' }: { className?: string }) {
     </svg>
   );
 }
+
+const ICON_PATHS = {
+  overview: <><rect x="3.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="3.5" width="7" height="7" rx="1.5" /><rect x="3.5" y="13.5" width="7" height="7" rx="1.5" /><rect x="13.5" y="13.5" width="7" height="7" rx="1.5" /></>,
+  cases: <path d="M3.5 7.5a2 2 0 0 1 2-2h3.8l2 2h7.2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" />,
+  kendras: <><path d="M4.5 10.5v9h15v-9" /><path d="M3 10.5 5 4.5h14l2 6z" /><path d="M9.5 19.5v-5h5v5" /></>,
+  stock: <><circle cx="12" cy="12.5" r="8" /><path d="M12 8v4.5l3 2" /></>,
+  batches: <><path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z" /><path d="M3.5 7.5 12 11.5l8.5-4M12 11.5v9" /></>,
+  model: <><circle cx="6" cy="17" r="1.6" /><circle cx="10" cy="12.5" r="1.6" /><circle cx="14.5" cy="15.5" r="1.6" /><circle cx="18" cy="7" r="1.6" /><circle cx="18" cy="7" r="4" /></>,
+  ledger: <><path d="M10 14a4 4 0 0 0 5.7 0l3-3A4 4 0 0 0 13 5.3l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>,
+  rules: <><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></>,
+  bill: <><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z" /><path d="M9 8.5h6M9 12.5h6" /></>,
+  notices: <><path d="M6 16.5v-5a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>,
+  check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
+  alert: <><path d="M12 3.5 2.5 20h19z" /><path d="M12 10v4.5M12 17.3v.2" /></>,
+};
+export type IconName = keyof typeof ICON_PATHS;
+export const Icon = ({ name, className = 'ico' }: { name: IconName; className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{ICON_PATHS[name]}</svg>
+);
 
 export function useTitle(title: string) {
   useEffect(() => { document.title = title ? `${title} | AushadhiTrack` : 'AushadhiTrack'; }, [title]);
@@ -40,12 +60,24 @@ export function Footer({ hindi = false }: { hindi?: boolean }) {
       <p>{hindi
         ? 'स्मार्ट इंडिया हैकथॉन 2026 (SIH26198) के लिए प्रोटोटाइप। सभी केंद्र, लोग और आँकड़े काल्पनिक हैं।'
         : 'Prototype for Smart India Hackathon 2026, problem statement SIH26198. Every kendra, person and figure is synthetic.'}</p>
-      <p className="foot-links"><a href="classic/">Classic version</a><a href="https://github.com/Mkhurana3/AushadhiTrack">Source code</a></p>
+      <div className="foot-links"><ThemeSwitch /><a href="classic/">Classic version</a><a href="https://github.com/Mkhurana3/AushadhiTrack">Source code</a></div>
     </footer>
   );
 }
 
-export interface NavItem { to: string; label: string; count?: number | string; alert?: boolean; end?: boolean }
+function ThemeSwitch() {
+  const theme = useTheme();
+  return (
+    <span className="theme-switch" role="group" aria-label="Appearance">
+      <span className="ts-label">Appearance</span>
+      {(['studio', 'ledger'] as const).map(t => (
+        <button key={t} type="button" aria-pressed={theme === t} onClick={() => setTheme(t)}>{t === 'studio' ? 'Studio' : 'Ledger'}</button>
+      ))}
+    </span>
+  );
+}
+
+export interface NavItem { to: string; label: string; icon: IconName; count?: number | string; alert?: boolean; end?: boolean }
 
 export function Shell({ ctx, who, role, nav, children }: { ctx: ReactNode; who: string; role: string; nav: NavItem[]; children: ReactNode }) {
   const { pathname } = useLocation();
@@ -62,7 +94,7 @@ export function Shell({ ctx, who, role, nav, children }: { ctx: ReactNode; who: 
         <nav className="side" aria-label="Sections">
           <ul>{nav.map(n => (
             <li key={n.to}><NavLink to={n.to} end={n.end}>
-              <span>{n.label}</span>{n.count ? <span className={'count' + (n.alert ? ' alert' : '')}>{n.count}</span> : null}
+              <Icon name={n.icon} className="nav-ico" /><span className="nav-label">{n.label}</span>{n.count ? <span className={'count' + (n.alert ? ' alert' : '')}>{n.count}</span> : null}
             </NavLink></li>
           ))}</ul>
         </nav>
