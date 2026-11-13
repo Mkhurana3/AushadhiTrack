@@ -1,7 +1,7 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Navigate, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom';
 import { Dialog, HashMark, Mark, PageHead, QrCode, Shell, printDialog } from '../../components/ui';
-import { kb, type Db } from '../../lib/derive';
+import { inTransit, kb, type Db } from '../../lib/derive';
 import { fmtDate, inr } from '../../lib/format';
 import { BATCH, BATCHES, DRUG, DRUGS, KENDRA, KENDRAS, TODAY, batchesOf, daysBetween, kname } from '../../lib/master';
 import { signReceipt, receiptPayload } from '../../lib/signing';
@@ -18,7 +18,8 @@ function kendraNotices(db: Db, recalls: ReturnType<typeof useApp>['ev']['recalls
   });
   const send = db.transferRequests.filter(t => t.from === kid).map(t => ({ type: 'send' as const, t, pending: !db.transfersDone[t.id] }));
   const incoming = db.transferRequests.filter(t => t.to === kid).map(t => ({ type: 'incoming' as const, t, pending: false }));
-  return [...recall, ...send, ...incoming];
+  const deliveries = inTransit(db).filter(d => d.to === kid).map(d => ({ type: 'delivery' as const, d, pending: true }));
+  return [...deliveries, ...recall, ...send, ...incoming];
 }
 
 export function KendraLayout() {
@@ -62,6 +63,7 @@ export function Counter() {
   const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState<Sale | null>(null);
+  const [consent, setConsent] = useState(false);
   const d = DRUG[code];
   const options = batchesOf(code).filter(b => (db.onHand[kb(k.id, b.id)] ?? 0) > 0).sort((a, b) => a.expiry.localeCompare(b.expiry));
   const firstOk = options.find(b => batchState(db, b).ok);
@@ -78,11 +80,12 @@ export function Counter() {
     const onHand = db.onHand[kb(k.id, batch)] ?? 0;
     if (qty > onHand) return setError(`Only ${onHand} strips of batch ${batch} are on the books.`);
     if (!/^[6-9]\d{9}$/.test(phone)) return setError('Enter a 10-digit mobile number starting with 6, 7, 8 or 9.');
+    if (!consent) return setError('Ask the customer before sending the bill by SMS, then tick the consent box.');
     const nums = db.sales.filter(s => s.kendra === k.id).map(s => Number(s.bill.split('-')[1]));
     const bill = `${k.id}-${String(Math.max(...nums) + 1).padStart(6, '0')}`;
     store.append('sale', `Kendra ${k.id}`, { kendra: k.id, bill: [bill, new Date().toTimeString().slice(0, 5), phone, batch, qty, d.mrp] });
     const sale = store.getState().db.sales.find(s => s.bill === bill) ?? null;
-    setReceipt(sale); setError(''); setPhone(''); setQtyText('1');
+    setReceipt(sale); setError(''); setPhone(''); setQtyText('1'); setConsent(false);
   };
 
   return (
@@ -117,6 +120,7 @@ export function Counter() {
               <p className="notice-inline">This number has bought {recent} strips of {d.short} here in the last 30 days. With this bill it reaches {recent + qty}, above the limit of {cfg.bulkStrips}, so the district office will be asked to review it.</p>
             )}
           </div>
+          <label className="consent"><input type="checkbox" checked={consent} onChange={e => setConsent(e.target.checked)} /> The customer agreed to receive this bill by SMS.</label>
           {error && <p className="form-error" role="alert">{error}</p>}
           <button className="btn primary">Create bill</button>
         </form>
@@ -137,6 +141,7 @@ export function Counter() {
 
 function Receipt({ sale, onClose }: { sale: Sale; onClose: () => void }) {
   const navigate = useNavigate();
+  const record = useApp().events[sale.seq - 1];
   const d = DRUG[sale.drug], b = BATCH[sale.batch], k = KENDRA[sale.kendra];
   const fields = { bill: sale.bill, kendra: sale.kendra, batch: sale.batch, qty: sale.qty, price: sale.price, date: sale.date };
   const query = useMemo(() => `${receiptPayload(fields)}&s=${signReceipt(fields)}`, [sale.bill]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -153,7 +158,7 @@ function Receipt({ sale, onClose }: { sale: Sale; onClose: () => void }) {
           <div><dt>Strips</dt><dd>{sale.qty} × ₹{sale.price}</dd></div>
           <div className="total"><dt>Total</dt><dd>{inr(sale.qty * sale.price)}</dd></div>
         </dl>
-        <div className="r-qr"><QrCode text={url} label="QR code that opens this bill’s check page" /><div><p>Scan to check that this bill is genuine and the price is right.</p><p className="r-sig"><HashMark className="hashmark inline" />Signed by {k.name}’s billing key and recorded in the ledger.</p></div></div>
+        <div className="r-qr"><QrCode text={url} label="QR code that opens this bill’s check page" /><div><p>Scan to check that this bill is genuine and the price is right.</p><p className="r-sig"><HashMark className="hashmark inline" />Signed by {k.name}’s billing key. Ledger record {sale.seq}, hash <code>{record?.hash.slice(0, 12)}</code>.</p></div></div>
       </div>
       <div className="dialog-actions">
         <button type="button" className="btn" onClick={printDialog}>Print</button>
@@ -210,19 +215,47 @@ export function KendraStock() {
   );
 }
 
+function DeliveryNotice({ kid, challan, items, date }: { kid: string; challan: string; items: [string, number][]; date: string }) {
+  const [counts, setCounts] = useState<Record<string, string>>({});
+  const [error, setError] = useState('');
+  const confirm = () => {
+    const got = items.map(([b, q]) => [b, counts[b] === undefined || counts[b] === '' ? NaN : Number(counts[b]), q] as const);
+    if (got.some(([, n, q]) => !Number.isInteger(n) || n < 0 || n > q)) { setError('Enter how many strips of each batch arrived, from 0 up to the number dispatched.'); return; }
+    store.append('receipt', `Kendra ${kid}`, { kendra: kid, challan, items: got.map(([b, n]) => [b, n]) });
+    const short = got.reduce((s, [, n, q]) => s + q - n, 0);
+    toast(short ? `Receipt confirmed, ${short} strips short. The district office will see a short-delivery case.` : 'Receipt confirmed. Everything on the challan arrived.');
+  };
+  return (
+    <article className="panel notice notice-pending">
+      <h2>Delivery on its way: challan {challan}</h2>
+      <p>Dispatched from the warehouse on {fmtDate(date)}. Count what arrives and confirm it; only the strips you confirm are added to your stock.</p>
+      <div className="table-wrap"><table className="data">
+        <thead><tr><th>Medicine</th><th>Batch</th><th className="num">Dispatched</th><th className="num">Arrived</th></tr></thead>
+        <tbody>{items.map(([b, q]) => (
+          <tr key={b}><td>{DRUG[BATCH[b].drug].name}</td><td>{b}</td><td className="num">{q}</td>
+            <td className="num"><input className="count-in" type="number" min={0} max={q} inputMode="numeric" aria-label={`Strips of ${b} that arrived`} value={counts[b] ?? ''} onChange={e => setCounts({ ...counts, [b]: e.target.value })} /></td></tr>
+        ))}</tbody>
+      </table></div>
+      {error && <p className="form-error" role="alert">{error}</p>}
+      <div className="form-foot"><button className="btn primary" type="button" onClick={confirm}>Confirm receipt</button></div>
+    </article>
+  );
+}
+
 export function Notices() {
   const k = useKendra();
   const { db, ev } = useApp();
   const list = kendraNotices(db, ev.recalls, k.id);
   return (
     <>
-      <PageHead title="Notices" sub="Recalls and transfer requests from the district office." />
-      {!list.length && <p className="empty-line">No notices. Recalls and transfer requests from the district office appear here.</p>}
+      <PageHead title="Notices" sub="Deliveries to confirm, recalls and transfer requests from the district office." />
+      {!list.length && <p className="empty-line">No notices. Deliveries, recalls and transfer requests from the district office appear here.</p>}
       {list.map(n => {
+        if (n.type === 'delivery') return <DeliveryNotice key={'d' + n.d.challan} kid={k.id} challan={n.d.challan} items={n.d.items} date={n.d.date} />;
         if (n.type === 'recall') {
           const held = Math.max(n.row.onHand, 0);
           return (
-            <article key={'r' + n.r.batch} className={'panel notice' + (n.pending ? ' pending' : '')}>
+            <article key={'r' + n.r.batch} className={'panel notice' + (n.pending ? ' notice-pending' : '')}>
               <h2>Recall: {n.r.drug.name}, batch {n.r.batch}</h2>
               <p>Recalled on {fmtDate(n.r.date)}. {n.r.reason}.</p>
               <p>{held ? <>You hold <strong>{held} strips</strong> of this batch. Do not bill them. Keep them apart and return them with the next warehouse pickup.</> : 'You hold none of this batch now.'}
@@ -235,7 +268,7 @@ export function Notices() {
         const t = n.t, d = DRUG[BATCH[t.batch].drug], done = db.transfersDone[t.id];
         if (n.type === 'send') {
           return (
-            <article key={'s' + t.id} className={'panel notice' + (n.pending ? ' pending' : '')}>
+            <article key={'s' + t.id} className={'panel notice' + (n.pending ? ' notice-pending' : '')}>
               <h2>Send {t.qty} strips of {d.name} to {kname(t.to)}</h2>
               <p>Batch {t.batch} expires on {fmtDate(BATCH[t.batch].expiry)} and will not sell here in time. {kname(t.to)} sells it faster. Requested by the district office on {fmtDate(t.at)}.</p>
               {done ? <p className="done">Sent on {fmtDate(done.at)}</p>

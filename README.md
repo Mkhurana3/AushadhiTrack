@@ -51,9 +51,11 @@ A score of 3 or more is high risk, 2 is medium and 1 is low. The limits can be c
 - **What it found.** In the demo the model finds phantom billing at Raj Nagar Extension. For three weeks, bursts of 2-strip bills went to new numbers just before closing. The stock really left the kendra, so the count matches and no rule fires. The model also agrees with three of the rule cases.
 
 **Operations**
+- **Dispatch and receipt.** The officer dispatches stock on a challan; the kendra counts what arrived and confirms it. Stock in transit is not flagged; a short count raises a short-delivery case straight away.
 - **Expiring stock.** Batches that will expire before they sell, with a suggested transfer to a kendra that sells faster.
 - **Recalls.** Recording a recall blocks the batch at every counter. The officer can see which kendras haven't acknowledged it and which are still billing it.
 - **Case workflow.** Cases move between open, in inquiry and closed. Closing a case needs a note.
+- **Billing safeguards.** Prices are fixed at MRP, expired and recalled batches can't be selected, the customer must agree to an SMS bill, and every receipt shows its ledger record and hash.
 - **Patient side.** In English and Hindi, a patient can check a bill or a strip's batch number and report a problem, which reaches the district office as a case.
 
 ## Run it locally

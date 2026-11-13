@@ -68,6 +68,21 @@ describe('rules and model', () => {
   });
 });
 
+describe('dispatch and delivery', () => {
+  it('does not flag stock in transit, then flags a short count on arrival', () => {
+    const led = seed();
+    const before = evaluate(derive(led.events)).findings.find(f => f.id === 'C-01121');
+    led.append(`${TODAY} 10:00`, 'dispatch', 'Central warehouse, Gurugram', { challan: 'DC/26/49999', to: 'GZB01', items: [['AML26C26', 50]] });
+    const inTransit = evaluate(derive(led.events)).findings.find(f => f.id === 'C-01121');
+    led.append(`${TODAY} 15:00`, 'receipt', 'Kendra GZB01', { kendra: 'GZB01', challan: 'DC/26/49999', items: [['AML26C26', 44]] });
+    const after = evaluate(derive(led.events)).findings.find(f => f.id === 'C-01121');
+    expect(before).toBeUndefined();
+    expect(inTransit).toBeUndefined();
+    expect(after?.hits.map(h => h.rule)).toEqual(['transit']);
+    expect(after?.value).toBe(6 * 8);
+  });
+});
+
 describe('receipt signatures', () => {
   const r = { bill: 'GZB02-005124', kendra: 'GZB02', batch: 'TEL26E40', qty: 2, price: 16, date: TODAY };
   it('verifies a genuine receipt', () => expect(verifyReceipt(r, signReceipt(r))).toBe(true));

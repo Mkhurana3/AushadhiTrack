@@ -144,7 +144,7 @@ function Sheet({ f, transit }: { f: RuleFinding; transit: boolean }) {
   const { db } = useApp();
   const s = f.snap;
   if (!s.date) return <p>No stock count has been submitted for this medicine yet.</p>;
-  const dispatched = batchesOf(f.drug.code).reduce((t, b) => t + (db.dispatched[`${f.kendra.id}|${b.id}`] ?? 0), 0);
+  const dispatched = batchesOf(f.drug.code).reduce((t, b) => t + (db.dispatchedReceived[`${f.kendra.id}|${b.id}`] ?? 0), 0);
   const rows: [string, string, boolean?][] = [];
   if (transit) { rows.push(['Dispatched by the warehouse', num(dispatched)]); rows.push(['Lost between warehouse and kendra', '− ' + num(dispatched - s.received), true]); }
   rows.push(['Received at the kendra', num(s.received)]);
