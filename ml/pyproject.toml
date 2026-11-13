@@ -1,0 +1,10 @@
+[project]
+name = "aushadhi-ml"
+version = "0.4.0"
+description = "Synthetic district ledger, behavioural features and anomaly model for AushadhiTrack"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2", "pandas>=2.2", "scikit-learn>=1.5"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
