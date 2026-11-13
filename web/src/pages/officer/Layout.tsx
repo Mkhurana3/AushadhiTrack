@@ -1,5 +1,5 @@
 import { Link, Outlet } from 'react-router-dom';
-import { Legend, PageHead, RiskTag, Shell } from '../../components/ui';
+import { HashMark, Legend, PageHead, RiskTag, Shell } from '../../components/ui';
 import { fmtDate, fmtShort, inr, num } from '../../lib/format';
 import { DISTRICT, DRUGS, KENDRAS, LAST, OFFICER } from '../../lib/master';
 import type { Finding } from '../../lib/rules';
@@ -40,8 +40,8 @@ export function OfficerLayout() {
 export function ChainLine() {
   const { chain } = useApp();
   return chain.ok
-    ? <p className="chain-line ok">All {num(chain.count)} records match their hashes</p>
-    : <p className="chain-line bad">Record #{chain.seq} has been altered</p>;
+    ? <p className="chain-line ok"><HashMark className="hashmark inline" />All {num(chain.count)} records match their hashes</p>
+    : <p className="chain-line bad"><HashMark className="hashmark inline" />Record #{chain.seq} has been altered</p>;
 }
 
 export function Overview() {

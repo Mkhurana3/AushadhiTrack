@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Footer, Icon, Mark, useTitle } from '../components/ui';
+import { Footer, HashMark, Icon, Mark, useTitle } from '../components/ui';
 import { fmtShort, num } from '../lib/format';
 import { DISTRICT, KENDRAS } from '../lib/master';
 import { MODEL } from '../lib/rules';
@@ -68,7 +68,7 @@ function ChainVisual() {
         </div>
       ))}
       <figcaption className={'chain-seal ' + (chain.ok ? 'ok' : 'bad')}>
-        <Icon name={chain.ok ? 'check' : 'alert'} className="seal-ico" />
+        <HashMark className="hashmark seal-ico" />
         {chain.ok ? `All ${num(chain.count)} records verified in your browser` : `Record #${chain.seq} has been altered`}
       </figcaption>
     </figure>

@@ -50,9 +50,22 @@ main:focus { outline: none; }
 }
 .brand { display: inline-flex; align-items: center; gap: 9px; color: var(--ink); text-decoration: none; font-weight: 700; font-size: 17px; letter-spacing: -.01em; }
 .brand:hover { color: var(--ink); }
-.mark { width: 30px; height: 18px; color: var(--carbon); flex: none; }
-.mark rect { fill: none; stroke: currentColor; stroke-width: 1.7; }
-.mark circle { fill: currentColor; }
+.mark { width: 26px; height: 26px; flex: none; --m-ink: var(--ink); --m-blue: #3a50d9; }
+.mark .m-short { stroke: var(--m-ink); }
+.mark .m-long { stroke: var(--m-blue); }
+.mark .m-p1 { fill: #93a6ff; }
+.mark .m-p { fill: #dfe4ff; }
+.hashmark { width: 20px; height: 20px; flex: none; --h-ink: var(--ink); }
+.hashmark .h-v { fill: var(--h-ink); }
+.hashmark .h-h { fill: #93a6ff; }
+.hashmark .h-pill { fill: #3a50d9; }
+.hashmark.inline { width: 15px; height: 15px; vertical-align: -2px; }
+.chain-line .hashmark { margin-right: 2px; }
+.chain-line::before { display: none; }
+.chain-ico { width: 34px; height: 34px; margin-right: -6px; }
+.chain.bad .hashmark { --h-ink: var(--high); }
+.chain-line.bad .hashmark { --h-ink: var(--high); }
+.r-sig { display: flex; align-items: center; gap: 6px; margin-top: 6px !important; color: var(--ink) !important; font-weight: 500; }
 .ctx { color: var(--ink-2); font-size: 14px; padding-left: 24px; border-left: 1px solid var(--rule); }
 .ctx-switch { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); font-weight: 500; }
 .ctx-id { color: var(--ink-3); font-weight: 400; }
@@ -311,7 +324,7 @@ input.count-in { width: 84px; padding: 5px 8px; text-align: right; }
 /* ---------- start */
 .start { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(320px, 1fr); gap: 56px; max-width: 1160px; margin: 0 auto; padding: 64px 36px 56px; flex: 1; align-items: start; }
 .brand.big { font-size: 20px; margin-bottom: 36px; }
-.brand.big .mark { width: 36px; height: 22px; }
+.brand.big .mark { width: 34px; height: 34px; }
 .start h1 { font-size: 36px; line-height: 1.18; font-weight: 600; letter-spacing: -.02em; max-width: 22ch; margin-bottom: 18px; }
 .start-intro > p { color: var(--ink-2); max-width: 58ch; font-size: 16px; }
 .flow { list-style: none; padding: 0; margin: 40px 0 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
@@ -499,3 +512,5 @@ ul.plain li:first-child { border-top: 0; }
 .tour ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; max-width: 62ch; color: var(--ink-2); font-size: 14.5px; }
 .tour li::marker { color: var(--ink-3); font-variant-numeric: tabular-nums; }
 @media (max-width: 860px) { .visits { grid-template-columns: minmax(0, 1fr); } }
+.chain { justify-content: flex-start; }
+.chain .chain-ico + div { margin-right: auto; }
