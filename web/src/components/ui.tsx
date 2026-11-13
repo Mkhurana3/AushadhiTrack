@@ -5,10 +5,28 @@ import { setTheme, useTheme } from '../lib/theme';
 import { useToast } from '../lib/toast';
 import type { CaseStatus, Risk } from '../lib/types';
 
+/** The logo: a blister strip bent into a tick. Short arm in ink, long arm in indigo, pockets along the stroke. */
 export function Mark({ className = 'mark' }: { className?: string }) {
   return (
-    <svg className={className} viewBox="0 0 30 18" aria-hidden="true">
-      <rect x="1" y="1" width="28" height="16" rx="5" /><circle cx="8" cy="9" r="3.2" /><circle cx="15" cy="9" r="3.2" /><circle cx="22" cy="9" r="3.2" />
+    <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
+      <path className="m-short" d="M4.6 16.6l7.4 7.4" strokeWidth="7.6" strokeLinecap="round" fill="none" />
+      <path className="m-long" d="M12 24L27.4 8.6" strokeWidth="7.6" strokeLinecap="round" fill="none" />
+      <circle className="m-p1" cx="8.3" cy="20.3" r="1.75" />
+      <circle className="m-p" cx="16.4" cy="19.6" r="1.75" /><circle className="m-p" cx="21.6" cy="14.4" r="1.75" /><circle className="m-p" cx="26.2" cy="9.8" r="1.5" />
+    </svg>
+  );
+}
+
+/** The ledger symbol: a hash sign drawn with capsules, one of them a two-tone pill. */
+export function HashMark({ className = 'hashmark' }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 32 32" aria-hidden="true">
+      <g transform="skewX(-12) translate(3.2 0)">
+        <rect className="h-v" x="9" y="3" width="4.6" height="26" rx="2.3" /><rect className="h-v" x="18.4" y="3" width="4.6" height="26" rx="2.3" />
+      </g>
+      <rect className="h-h" x="3" y="9.2" width="26" height="4.6" rx="2.3" />
+      <path className="h-pill" d="M16 9.2h10.7a2.3 2.3 0 0 1 0 4.6H16z" />
+      <rect className="h-h" x="3" y="18.2" width="26" height="4.6" rx="2.3" />
     </svg>
   );
 }
@@ -20,7 +38,7 @@ const ICON_PATHS = {
   stock: <><circle cx="12" cy="12.5" r="8" /><path d="M12 8v4.5l3 2" /></>,
   batches: <><path d="M3.5 7.5 12 3.5l8.5 4v9L12 20.5l-8.5-4z" /><path d="M3.5 7.5 12 11.5l8.5-4M12 11.5v9" /></>,
   model: <><circle cx="6" cy="17" r="1.6" /><circle cx="10" cy="12.5" r="1.6" /><circle cx="14.5" cy="15.5" r="1.6" /><circle cx="18" cy="7" r="1.6" /><circle cx="18" cy="7" r="4" /></>,
-  ledger: <><path d="M10 14a4 4 0 0 0 5.7 0l3-3A4 4 0 0 0 13 5.3l-1 1" /><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" /></>,
+  ledger: <path d="M10.2 4 7.6 20M16.6 4 14 20M4.6 9.2h15M3.8 15h15" strokeWidth="2.2" />,
   rules: <><path d="M4 7h9M17 7h3M4 17h3M11 17h9" /><circle cx="15" cy="7" r="2" /><circle cx="9" cy="17" r="2" /></>,
   bill: <><path d="M6 3.5h12v17l-3-2-3 2-3-2-3 2z" /><path d="M9 8.5h6M9 12.5h6" /></>,
   notices: <><path d="M6 16.5v-5a6 6 0 0 1 12 0v5l1.5 2h-15z" /><path d="M10 20.5a2 2 0 0 0 4 0" /></>,

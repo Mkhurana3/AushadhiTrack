@@ -50,7 +50,9 @@
 /* frame: top bar and side navigation */
 [data-theme="studio"] .topbar { background: var(--frame); border-bottom: 1px solid rgba(255, 255, 255, .06); color: #fff; }
 [data-theme="studio"] .brand, [data-theme="studio"] .brand:hover { color: #fff; }
-[data-theme="studio"] .mark { color: var(--frame-accent); }
+/* on the dark frame the short arm turns white and the long arm a brighter indigo */
+[data-theme="studio"] .topbar .mark, [data-theme="studio"] .hero .mark { --m-ink: #ffffff; --m-blue: #6b82ff; }
+[data-theme="studio"] .hero .hashmark, [data-theme="studio"] .chain-seal .hashmark { --h-ink: #ffffff; }
 [data-theme="studio"] .ctx { color: var(--frame-text); border-left-color: rgba(255, 255, 255, .14); }
 [data-theme="studio"] .ctx-switch { color: #fff; }
 [data-theme="studio"] .ctx-switch select { background: var(--frame-2); color: #fff; border-color: rgba(255, 255, 255, .18); }
@@ -137,7 +139,7 @@
 .chain-seal { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; margin-top: 4px; }
 .chain-seal.ok { color: #8fe0b8; }
 .chain-seal.bad { color: #ffb0a4; }
-.seal-ico { width: 20px; height: 20px; }
+.seal-ico { width: 22px; height: 22px; }
 
 .roles-row, .how { max-width: 1220px; margin: 0 auto; padding: 48px 40px 0; }
 .roles-row > h2, .how h2 { font-family: var(--display); font-size: 22px; font-weight: 600; margin-bottom: 16px; }
@@ -187,3 +189,5 @@
 }
 /* the start page draws its own full-width bands */
 main.start-studio, [data-theme="studio"] main.start-studio { padding: 0; max-width: none; }
+/* the receipt is printed on white, so the brand stays dark there */
+[data-theme="studio"] .receipt .brand { color: var(--ink); }
