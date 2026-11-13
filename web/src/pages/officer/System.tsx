@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
-import { PageHead } from '../../components/ui';
+import { HashMark, PageHead } from '../../components/ui';
 import { fmtDate, fmtShort, num, plural } from '../../lib/format';
 import { DRUG, KENDRA } from '../../lib/master';
 import { DEFAULT_RULES, MODEL, RULES, type RuleConfig } from '../../lib/rules';
@@ -20,6 +20,7 @@ export function LedgerPage() {
       <PageHead title="Ledger" sub="Every dispatch, receipt, bill, stock count and decision is a record here. Each record stores a SHA-256 hash of its own contents and of the record before it, so changing any old record breaks the chain at that point. The same hashes are produced by the Python pipeline that generated the history." />
       {chain.ok ? (
         <div className="chain ok">
+          <HashMark className="hashmark chain-ico" />
           <div><p><strong>All {num(chain.count)} records match their hashes.</strong></p>
             <p>Latest hash <code>{chain.head.slice(0, 16)}</code>{lastCheck ? `. Checked at ${lastCheck} in ${chain.ms} ms` : ''}.</p></div>
           <div className="actions">
@@ -29,6 +30,7 @@ export function LedgerPage() {
         </div>
       ) : (
         <div className="chain bad" role="alert">
+          <HashMark className="hashmark chain-ico" />
           <div><p><strong>Record #{chain.seq} has been altered.</strong> Its contents no longer match the hash stored when it was written.</p>{tamper && <p>{tamper.story}</p>}</div>
           <div className="actions">
             <Link className="btn" to={`/officer/ledger?seq=${chain.seq}`}>Show record #{chain.seq}</Link>
